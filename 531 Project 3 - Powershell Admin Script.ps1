@@ -13,6 +13,7 @@ param([string]$csv_source)
 if ($csv_source) {
     Import-Csv $csv_source
 } else {
+    Write-Host "ERROR: Source is not defined" -ForegroundColor Red
     break
 }
 
