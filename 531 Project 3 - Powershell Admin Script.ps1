@@ -5,8 +5,16 @@
 
 ## ----- Script 1 - Create Active Directory User Accounts
 
-# accepts a csv parameter
+#parameters
 
+param([string]$csv_source)
+
+# accepts a csv parameter
+if ($csv_source) {
+    Import-Csv $csv_source
+} else {
+    break
+}
 
 
 ## ----- Script 2 - Gather information about Windows computers in your enterprise
