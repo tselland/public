@@ -7,11 +7,18 @@
 
 #parameters
 
-param([string]$csv_source)
+param([string]$csv_source="d:\source\IS531\GroupProject3Usernames.csv")
 
 # accepts a csv parameter
 if ($csv_source) {
-    Import-Csv $csv_source
+    $source_exists = Test-Path $csv_source 
+
+    if($source_exists){
+        Import-Csv $csv_source
+    } else {
+        Write-Host "ERROR: Source path does not exist" -ForegroundColor Red
+        break
+    }
 } else {
     Write-Host "ERROR: Source is not defined" -ForegroundColor Red
     break
