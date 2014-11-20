@@ -7,14 +7,14 @@
 
 #parameters
 
-param([string]$csv_source="d:\source\IS531\GroupProject3Usernames.csv")
+param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv")
 
 # accepts a csv parameter
 if ($csv_source) {
     $source_exists = Test-Path $csv_source 
 
     if($source_exists){
-        Import-Csv $csv_source
+        $names = Import-Csv $csv_source
     } else {
         Write-Host "ERROR: Source path does not exist" -ForegroundColor Red
         break
@@ -25,16 +25,24 @@ if ($csv_source) {
 }
 #loop for each row
 #retrieve params from imported csv
-$username = "username"
-$surname = "surname"
-$givenname = "givenname"
 
-New-ADUser $username
-$user = Get-ADUser $username
-$user.Surname = $surname
-$user.Givenname = $givenname
+$csv_source
+$names
 
-Set-ADUser -instance $user
+
+Foreach($line in $names){
+    $username = $line.username
+    $surname = $line.lastname
+    $givenname = $line.firstname
+
+    New-ADUser $username
+    $user = Get-ADUser $username
+    $user.Surname = $surname
+    $user.Givenname = $givenname
+
+    Set-ADUser -instance $user
+}
+
 
 
 
@@ -48,7 +56,7 @@ $computerBIOS = Get-CimInstance CIM_BIOSElement
 $computerOS = Get-WmiObject Win32_OperatingSystem
 $computerCPU = Get-WmiObject Win32_Processor
 $computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
-Clear-Host
+#Clear-Host
 
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
 "Manufacturer: " + $computerSystem.Manufacturer
