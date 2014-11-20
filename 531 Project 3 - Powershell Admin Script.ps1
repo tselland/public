@@ -56,7 +56,7 @@ $computerBIOS = Get-CimInstance CIM_BIOSElement
 $computerOS = Get-WmiObject Win32_OperatingSystem
 $computerCPU = Get-WmiObject Win32_Processor
 $computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
-#Clear-Host
+Clear-Host
 
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
 "Manufacturer: " + $computerSystem.Manufacturer
