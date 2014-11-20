@@ -26,3 +26,26 @@ if ($csv_source) {
 
 
 ## ----- Script 2 - Gather information about Windows computers in your enterprise
+
+##NEEDSWORK: fix method to get computerName or list of computers.
+param([string]$computer = (Get-WmiObject -Class Win32_Desktop -ComputerName))
+
+$computerSystem = Get-WmiObject Win32_ComputerSystem
+$computerBIOS = Get-CimInstance CIM_BIOSElement
+$computerOS = Get-WmiObject Win32_OperatingSystem
+$computerCPU = Get-WmiObject Win32_Processor
+$computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
+Clear-Host
+
+Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
+"Manufacturer: " + $computerSystem.Manufacturer
+"Model: " + $computerSystem.Model
+"Serial Number: " + $computerBIOS.SerialNumber
+"CPU: " + $computerCPU.Name
+"HDD Capacity: "  + "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
+"HDD Space: " + "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
+"RAM: " + "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
+"Operating System: " + $computerOS.caption + ", Service Pack: " + $computerOS.ServicePackMajorVersion
+"User logged In: " + $computerSystem.UserName
+"Last Reboot: " + $computerOS.LastBootUpTime
+
