@@ -23,6 +23,19 @@ if ($csv_source) {
     Write-Host "ERROR: Source is not defined" -ForegroundColor Red
     break
 }
+#loop for each row
+#retrieve params from imported csv
+$username = "username"
+$surname = "surname"
+$givenname = "givenname"
+
+New-ADUser $username
+$user = Get-ADUser $username
+$user.Surname = $surname
+$user.Givenname = $givenname
+
+Set-ADUser -instance $user
+
 
 
 ## ----- Script 2 - Gather information about Windows computers in your enterprise
