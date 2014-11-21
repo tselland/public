@@ -37,14 +37,21 @@ Function Create-Users($table){
         $username = $line.username
         $surname = $line.lastname
         $givenname = $line.firstname
+        
+        try {
+            $existing_user = Get-ADUser $username
+            Write-Host "the user $username already exists" -ForegroundColor Red
+        }
+        catch { 
+            New-ADUser $username
+            $user = Get-ADUser $username
+            $user.Surname = $surname
+            $user.Givenname = $givenname
 
-        New-ADUser $username
-        $user = Get-ADUser $username
-        $user.Surname = $surname
-        $user.Givenname = $givenname
-
-        Set-ADUser -instance $user
+            Set-ADUser -instance $user
+        }
     }
-}   
+} 
 
 Create-Users $names
+  
