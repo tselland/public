@@ -11,15 +11,16 @@ param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv")
 
 # accepts a csv parameter
 if ($csv_source) {
-    $source_exists = Test-Path $csv_source 
+    $source_exists = Test-Path $csv_source -PathType Leaf
 
     if($source_exists){
         $names = Import-Csv $csv_source
     } else {
-        Write-Host "ERROR: Source path does not exist" -ForegroundColor Red
+        Write-Host "ERROR: Source ($csv_source) does not exist or is a directory" -ForegroundColor Red
         break
     }
 } else {
+    #Should not ever reach this
     Write-Host "ERROR: Source is not defined" -ForegroundColor Red
     break
 }
