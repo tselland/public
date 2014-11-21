@@ -70,21 +70,18 @@ Clear-Host
 
 $table = @()
 
+$hddCap = "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
+$hddSpace = "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
+$ram = "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
+
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
 $table += Set-Stats "Manufacturer" $computerSystem.Manufacturer
 $table += Set-Stats "Model" $computerSystem.Model
 $table += Set-Stats "Serial Number" $computerBIOS.SerialNumber
 $table += Set-Stats "CPU" $computerCPU.Name
-
-$hddCap = "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
 $table += Set-Stats "HDD Capacity" $hddCap
-
-$hddSpace = "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
 $table += Set-Stats "HDD Space" $hddSpace
-
-$ram = "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
 $table += Set-Stats "RAM" $ram
-
 $table += Set-Stats "Operating System" $computerOS.caption
 $table += Set-Stats "Service Pack" $computerOS.ServicePackMajorVersion
 $table += Set-Stats "Current User" $computerSystem.UserName
@@ -94,10 +91,9 @@ if($computerBattery) {
     $percentRemaining = $computerBattery.EstimatedChargeRemaining
     $hoursRemaining = [Math]::Floor([decimal]($computerBattery.EstimatedRunTime / 60))
     $minutesRemaining = $computerBattery.EstimatedRunTime % 60
-    
     $timeRemaining = "$percentRemaining% ($hoursRemaining hours $minutesRemaining minutes remaining)"
-    $table+= Set-Stats "Battery Remaining" $timeRemaining
 
+    $table+= Set-Stats "Battery Remaining" $timeRemaining
 } else {
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
