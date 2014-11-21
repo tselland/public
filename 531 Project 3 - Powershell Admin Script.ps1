@@ -63,9 +63,11 @@ $computerSystem = Get-WmiObject Win32_ComputerSystem
 $computerBIOS = Get-CimInstance CIM_BIOSElement
 $computerOS = Get-WmiObject Win32_OperatingSystem
 $computerCPU = Get-WmiObject Win32_Processor
+$computerDrives = Get-WmiObject Win32_CDROMDrive
 $computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
 $computerBattery = Get-WmiObject Win32_Battery
 $lastBootUpTime = Get-CimInstance -ClassName win32_operatingsystem | select lastbootuptime
+$userSession = Get-WmiObject Win32_Session
 Clear-Host
 
 $table = @()
@@ -73,29 +75,58 @@ $table = @()
 $hddCap = "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
 $hddSpace = "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
 $ram = "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
+$startTime = [System.Management.ManagementDateTimeConverter]::ToDateTime($userSession[0].StartTime)
+
+if($computerDrives){
+    $drive = $computerDrives.Description
+} else {
+    $drive = "None"
+}
 
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
+
+#SPECIFICATIONS
 $table += Set-Stats "Manufacturer" $computerSystem.Manufacturer
 $table += Set-Stats "Model" $computerSystem.Model
 $table += Set-Stats "Serial Number" $computerBIOS.SerialNumber
+
+#HARDWARE
 $table += Set-Stats "CPU" $computerCPU.Name
+$table += Set-Stats "Processors" $computerSystem.NumberOfProcessors
 $table += Set-Stats "HDD Capacity" $hddCap
 $table += Set-Stats "HDD Space" $hddSpace
 $table += Set-Stats "RAM" $ram
+$table += Set-Stats "Optical Drive" $drive
+
+#Operating System
 $table += Set-Stats "Operating System" $computerOS.caption
 $table += Set-Stats "Service Pack" $computerOS.ServicePackMajorVersion
+
+#User Info
 $table += Set-Stats "Current User" $computerSystem.UserName
+$table += Set-Stats "Session Start" $startTime
 $table += Set-Stats "Last Reboot" $lastBootUpTime.lastbootuptime
 
+#Battery
 if($computerBattery) {
     $percentRemaining = $computerBattery.EstimatedChargeRemaining
     $hoursRemaining = [Math]::Floor([decimal]($computerBattery.EstimatedRunTime / 60))
     $minutesRemaining = $computerBattery.EstimatedRunTime % 60
     $timeRemaining = "$percentRemaining% ($hoursRemaining hours $minutesRemaining minutes remaining)"
-
+    
+    $pluggedIn = gwmi -Class batterystatus -Namespace root\wmi
+    $pluggedIn = $pluggedIn.PowerOnline
+    if($pluggedIn){
+        $table += Set-Stats "Battery Status" "Plugged-In, Charging"
+    } else {
+        $table += Set-Stats "Battery Status" "Unplugged"
+    }
+    
     $table+= Set-Stats "Battery Remaining" $timeRemaining
 } else {
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
 
 $table
+$table | Export-CSV -path "$PSScriptRoot\$($computerSystem.Name).csv"
+
