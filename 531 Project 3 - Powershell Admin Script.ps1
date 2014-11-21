@@ -56,6 +56,7 @@ $computerBIOS = Get-CimInstance CIM_BIOSElement
 $computerOS = Get-WmiObject Win32_OperatingSystem
 $computerCPU = Get-WmiObject Win32_Processor
 $computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
+$computerBattery = Get-WmiObject Win32_battery
 Clear-Host
 
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
@@ -69,4 +70,14 @@ Write-Host "System Information for: " $computerSystem.Name -BackgroundColor Dark
 "Operating System: " + $computerOS.caption + ", Service Pack: " + $computerOS.ServicePackMajorVersion
 "User logged In: " + $computerSystem.UserName
 "Last Reboot: " + $computerOS.LastBootUpTime
+
+if($computerBattery) {
+    $timeRemaining = $computerBattery.EstimatedChargeRemaining
+    
+    "Battery Remaining: $timeRemaining%"
+    "Battery Time: "
+    
+} else {
+    "Battery Status: No battery connected"
+}
 
