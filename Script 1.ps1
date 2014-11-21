@@ -1,6 +1,6 @@
 ﻿#parameters
 
-param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv")
+param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv", [switch]$no_report, [string]$output_filename="output.csv" )
 
 # accepts a csv parameter
 if ($csv_source) {
@@ -32,8 +32,8 @@ if ($csv_source) {
 #$csv_source
 #$names
 
-#Function Create-Users([string]$names){
-    Foreach($line in $names){
+Function Create-Users($table){
+    Foreach($line in $table){
         $username = $line.username
         $surname = $line.lastname
         $givenname = $line.firstname
@@ -45,6 +45,6 @@ if ($csv_source) {
 
         Set-ADUser -instance $user
     }
-#}   
+}   
 
- 
+Create-Users $names
