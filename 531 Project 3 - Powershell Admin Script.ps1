@@ -72,12 +72,11 @@ Write-Host "System Information for: " $computerSystem.Name -BackgroundColor Dark
 "Last Reboot: " + $computerOS.LastBootUpTime
 
 if($computerBattery) {
-    $timeRemaining = $computerBattery.EstimatedChargeRemaining
-    
-    "Battery Remaining: $timeRemaining%"
-    "Battery Time: "
-    
+    $percentRemaining = $computerBattery.EstimatedChargeRemaining
+    $hoursRemaining = [Math]::Floor([decimal]($computerBattery.EstimatedRunTime / 60))
+    $minutesRemaining = $computerBattery.EstimatedRunTime % 60
+ 
+    "Battery Remaining: $percentRemaining% - $hoursRemaining hours $minutesRemaining minutes remaining"
 } else {
     "Battery Status: No battery connected"
 }
-
