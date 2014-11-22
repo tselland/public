@@ -3,6 +3,7 @@
 ## Group 2B
 ## Carlos Filoteo, Nathan Dudley, Michael Helvey, Travis Selland
 
+<<<<<<< HEAD:531 Project 3 - Powershell Admin Script.ps1
 ## ----- Script 1 - Create Active Directory User Accounts
 
 #parameters
@@ -47,6 +48,8 @@ Foreach($line in $names){
 
 
 
+=======
+>>>>>>> b9d15f9fc728a7568b8b3d38ea2733b2a32d3cd8:Script2.ps1
 ## ----- Script 2 - Gather information about Windows computers in your enterprise
 
 ##NEEDSWORK: fix method to get computerName or list of computers.
