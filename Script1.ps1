@@ -12,7 +12,9 @@ if ($csv_source) {
         if (gci $csv_source *.csv){
             Write-Host "Importing usernames..." -ForegroundColor Cyan
             $names = Import-Csv $csv_source
+            $sourcePath = $(gci $csv_source).DirectoryName
         } else {
+            # Output errors
             Write-Host "ERROR: File is not a .csv file" -ForegroundColor Red
             break
         }
@@ -26,32 +28,65 @@ if ($csv_source) {
     Write-Host "ERROR: Source is not defined" -ForegroundColor Red
     break
 }
-#loop for each row
-#retrieve params from imported csv
 
-#$csv_source
-#$names
-
+# Function to create users based on entries in .csv file.
 Function Create-Users($table){
+    Write-Host "`nCREATING USERS...`n"
+    #loop for each row
     Foreach($line in $table){
+    #retrieve params from imported csv
         $username = $line.username
         $surname = $line.lastname
         $givenname = $line.firstname
         
         try {
+            # Check if user already exists
             $existing_user = Get-ADUser $username
-            Write-Host "the user $username already exists" -ForegroundColor Red
+            Write-Host "User $username already exists" -ForegroundColor Red
         }
-        catch { 
+        catch {
+            # Create new user 
             New-ADUser $username
             $user = Get-ADUser $username
             $user.Surname = $surname
             $user.Givenname = $givenname
 
             Set-ADUser -instance $user
+            Write-Host "User $username created successfully!" -ForegroundColor DarkCyan
+            
+            # Add creation result to table 
+            $line | Add-Member -name "SamAccountName" -value $user.SamAccountName -MemberType NoteProperty
+            $line | Add-Member -name "SID" -value $user.SID -MemberType NoteProperty
+        }
+    }
+    
+    # Export resulting table results to CSV file
+    Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
+    $table | Export-Csv "$sourcePath\$output_filename"
+    
+} 
+
+Create-Users $names
+
+# Function to delete users based on entries in .csv file
+Function Delete-Users($table){
+    Write-Host "`nDeleting USERS...`n"
+    Foreach($line in $table){
+        
+        try {
+            # Check if user is in Active Directory
+            $existing_user = Get-ADUser $line.username
+            if ($existing_user){
+                # Delete user 
+                Write-Host "Deleting $existing_user" -ForegroundColor DarkCyan
+                Remove-ADuser $existing_user -Confirm:$false
+            }
+        }
+        catch {
+            # Output error if user is not in Active Directory
+            Write-Host "User $line.username does not exist!" -ForegroundColor Red
         }
     }
 } 
 
-Create-Users $names
-  
+# Delete-Users $names
