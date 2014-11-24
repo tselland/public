@@ -18,7 +18,7 @@ Function Set-Stats([string]$label, [string]$info) {
     return $stats
 }
 
-$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
 
 #elements of the system are gathered and assigned to variables
 $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
