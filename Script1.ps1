@@ -1,8 +1,7 @@
 ﻿#parameters
+param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv", [switch]$no_report, [string]$output_filename="output.csv", [switch]$delete_users=$false )
 
-param([string]$csv_source="c:\is531\public\GroupProject3Usernames.csv", [switch]$no_report, [string]$output_filename="output.csv" )
-
-# accepts a csv parameter
+# Check for a csv file in parameter
 if ($csv_source) {
     # Check is source exists
     $source_exists = Test-Path $csv_source -PathType Leaf
@@ -50,7 +49,8 @@ Function Create-Users($table){
             $user = Get-ADUser $username
             $user.Surname = $surname
             $user.Givenname = $givenname
-
+            
+            # Set ADUser properties, notify user of success
             Set-ADUser -instance $user
             Write-Host "User $username created successfully!" -ForegroundColor DarkCyan
             
@@ -64,9 +64,7 @@ Function Create-Users($table){
     Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
     $table | Export-Csv "$sourcePath\$output_filename"
     
-} 
-
-Create-Users $names
+}
 
 # Function to delete users based on entries in .csv file
 Function Delete-Users($table){
@@ -89,4 +87,9 @@ Function Delete-Users($table){
     }
 } 
 
-# Delete-Users $names
+# Create or delete users based on user input of switch
+if ($delete_users -eq $false) {
+    Create-Users $names
+} else {
+    Delete-Users $names
+}
