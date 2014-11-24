@@ -4,8 +4,9 @@
 ## Carlos Filoteo, Nathan Dudley, Michael Helvey, Travis Selland
 ## Script 2 - Gather information about Windows computers in your enterprise
 
-##NEEDSWORK: fix method to get computerName or list of computers.
-param([string]$computer = (Get-WmiObject -Class Win32_Desktop -ComputerName))
+# Parameters 
+# $computer_name parameter will accept a fully qualified domain name (FQDN), a NetBIOS name, or an IP address.
+param([string]$computer_name="localhost")
 
 Function Set-Stats([string]$label, [string]$info) {
     $stats = "" | Select Label, Info
@@ -15,15 +16,17 @@ Function Set-Stats([string]$label, [string]$info) {
     return $stats
 }
 
-$computerSystem = Get-WmiObject Win32_ComputerSystem
-$computerBIOS = Get-CimInstance CIM_BIOSElement
-$computerOS = Get-WmiObject Win32_OperatingSystem
-$computerCPU = Get-WmiObject Win32_Processor
-$computerDrives = Get-WmiObject Win32_CDROMDrive
-$computerHDD = Get-WMIObject Win32_LogicalDisk -Filter "DeviceID = 'C:'"
-$computerBattery = Get-WmiObject Win32_Battery
-$lastBootUpTime = Get-CimInstance -ClassName win32_operatingsystem | select lastbootuptime
-$userSession = Get-WmiObject Win32_Session
+$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name
+
+$computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name
+$computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name
+$computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name
+$computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name
+$computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name
+$computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'"
+$computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name 
+$lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime
+$userSession = Get-WmiObject Win32_Session -ComputerName $computer_name
 Clear-Host
 
 $table = @()
@@ -158,4 +161,4 @@ $chart.ChartTitle.Text = "Hard Disk Allocation"
 $chart.ApplyLayout(6,69)
 
 $newFullName = $fullName.replace('.csv', '.xlsx')
-$wb.SaveAs($newFullName) 
+$wb.SaveAs($newFullName)
