@@ -6,7 +6,7 @@
 
 # Parameters 
 # $computer_name parameter will accept a fully qualified domain name (FQDN), a NetBIOS name, or an IP address.
-param([string]$computer_name="localhost")
+param([string]$computer_name="localhost", [switch]$no_report)
 
 Function Set-Stats([string]$label, [string]$info) {
     $stats = "" | Select Label, Info
@@ -86,79 +86,83 @@ if($computerBattery) {
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
 
+#Output table to console
 $table
 
-#Export report as CSV
-$fullName = "$PSScriptRoot\$($computerSystem.Name).csv"
-$table | Export-CSV -path $fullName -ErrorAction 'silentlycontinue'
+#Export Report to CSV and format for excel
+if ($no_report -eq $true) {
+    #Export report as CSV
+    $fullName = "$PSScriptRoot\$($computerSystem.Name).csv"
+    $table | Export-CSV -path $fullName -ErrorAction 'silentlycontinue'
+    
+    #Format report in Excel
 
-#Format report in Excel
+    #Create new workbook from CSV
+    $XL = New-Object -comobject Excel.Application
+    $XL.Visible = $true   
+    $wb = $XL.Workbooks.Open($fullName)
+    $ws = $wb.Worksheets.Item(1)
 
-#Create new workbook from CSV
-$XL = New-Object -comobject Excel.Application
-$XL.Visible = $true   
-$wb = $XL.Workbooks.Open($fullName)
-$ws = $wb.Worksheets.Item(1)
+    #Get Rid of the Automatic Header
+    $ws.Cells.Item(1,"a").EntireRow.Delete() | Out-Null
+    $ws.Cells.Item(1,"a").EntireRow.Delete() | Out-Null
 
-#Get Rid of the Automatic Header
-$ws.Cells.Item(1,"a").EntireRow.Delete() | Out-Null
-$ws.Cells.Item(1,"a").EntireRow.Delete() | Out-Null
+    #Add Sub Headings
+    $headingRows = @(1, 6, 14, 18, 23)
+    $headingCaptions = @("Computer Specs", "Hardware", "Operating System", "User and Session", "Battery Life")
+    $counter = 0
 
-#Add Sub Headings
-$headingRows = @(1, 6, 14, 18, 23)
-$headingCaptions = @("Computer Specs", "Hardware", "Operating System", "User and Session", "Battery Life")
-$counter = 0
+    foreach($hr in $headingRows){
+        $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
+        $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
+        $hr+=1
+        $range = "a$hr" + ":b$hr"
+        $ws.Range($range).Merge() | Out-Null
+        $ws.Cells.Item($hr, "a").Interior.ColorIndex = 44
+        $ws.Cells.Item($hr,"a").HorizontalAlignment = -4108
+        $ws.Cells.Item($hr, "a") = $headingCaptions[$counter]
+        $counter++
+    }
 
-foreach($hr in $headingRows){
-    $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
-    $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
-    $hr+=1
-    $range = "a$hr" + ":b$hr"
-    $ws.Range($range).Merge() | Out-Null
-    $ws.Cells.Item($hr, "a").Interior.ColorIndex = 44
-    $ws.Cells.Item($hr,"a").HorizontalAlignment = -4108
-    $ws.Cells.Item($hr, "a") = $headingCaptions[$counter]
-    $counter++
+    foreach($hr in $headingRows){
+        $hr+=2
+        $dataRange = $ws.Cells.Item($hr, "a").CurrentRegion
+        $dataRange.Borders.LineStyle = 1
+        $dataRange.Borders.Weight = 2
+        $dataRange.HorizontalAlignment = -4131
+        $hr-=1
+        $ws.Cells.Item($hr,"a").HorizontalAlignment = -4108
+    }
+
+    #Add Primary Heading
+    $ws.Range("a1").EntireRow.Insert(-4142) | Out-Null
+    $ws.Cells.Item(1,"a") = "Summary Data for $($computerSystem.Name)"
+    $ws.Cells.Item(1,1).Font.Size = 14
+    $ws.Cells.Item(1,1).Font.Bold = $True
+    $ws.Cells.Item(1,"a").Interior.ColorIndex = 6
+    $ws.Range("a1:b1").Merge() | Out-Null
+    $ws.Columns.Autofit() | Out-Null
+    $ws.Cells.Item(1,1).HorizontalAlignment = -4108 
+
+    $ws.Cells.Item(3, "f") = "Free"
+    $ws.Cells.Item(4, "f") = $computerHDD.FreeSpace/1GB
+    $ws.Cells.Item(3, "g") = "Used"
+    $ws.Cells.Item(4, "g") = $computerHDD.Size/1GB - $computerHDD.FreeSpace/1GB
+
+    $ws.Range("f3:g4").Select() | Out-Null
+
+    $chart = $ws.Shapes.AddChart().Chart
+    #[Enum]::getvalues([Microsoft.Office.Interop.Excel.XlChartType]) | select @{n="Name";e={"$_"}},value__ | ft -auto
+    $chart.ChartType = 5
+
+    $ws.Shapes.Item("Chart 1").Top = 30
+    $ws.Shapes.Item("Chart 1").Left = 350
+
+    $chart.SetSourceData($ws.Range("f3:g4"))
+    $chart.HasTitle = $True
+    $chart.ChartTitle.Text = "Hard Disk Allocation"
+    $chart.ApplyLayout(6,69)
+
+    $newFullName = $fullName.replace('.csv', '.xlsx')
+    $wb.SaveAs($newFullName)
 }
-
-foreach($hr in $headingRows){
-    $hr+=2
-    $dataRange = $ws.Cells.Item($hr, "a").CurrentRegion
-    $dataRange.Borders.LineStyle = 1
-    $dataRange.Borders.Weight = 2
-    $dataRange.HorizontalAlignment = -4131
-    $hr-=1
-    $ws.Cells.Item($hr,"a").HorizontalAlignment = -4108
-}
-
-#Add Primary Heading
-$ws.Range("a1").EntireRow.Insert(-4142) | Out-Null
-$ws.Cells.Item(1,"a") = "Summary Data for $($computerSystem.Name)"
-$ws.Cells.Item(1,1).Font.Size = 14
-$ws.Cells.Item(1,1).Font.Bold = $True
-$ws.Cells.Item(1,"a").Interior.ColorIndex = 6
-$ws.Range("a1:b1").Merge() | Out-Null
-$ws.Columns.Autofit() | Out-Null
-$ws.Cells.Item(1,1).HorizontalAlignment = -4108 
-
-$ws.Cells.Item(3, "f") = "Free"
-$ws.Cells.Item(4, "f") = $computerHDD.FreeSpace/1GB
-$ws.Cells.Item(3, "g") = "Used"
-$ws.Cells.Item(4, "g") = $computerHDD.Size/1GB - $computerHDD.FreeSpace/1GB
-
-$ws.Range("f3:g4").Select() | Out-Null
-
-$chart = $ws.Shapes.AddChart().Chart
-#[Enum]::getvalues([Microsoft.Office.Interop.Excel.XlChartType]) | select @{n="Name";e={"$_"}},value__ | ft -auto
-$chart.ChartType = 5
-
-$ws.Shapes.Item("Chart 1").Top = 30
-$ws.Shapes.Item("Chart 1").Left = 350
-
-$chart.SetSourceData($ws.Range("f3:g4"))
-$chart.HasTitle = $True
-$chart.ChartTitle.Text = "Hard Disk Allocation"
-$chart.ApplyLayout(6,69)
-
-$newFullName = $fullName.replace('.csv', '.xlsx')
-$wb.SaveAs($newFullName)
