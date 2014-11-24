@@ -60,13 +60,14 @@ Function Create-Users($table){
         }
     }
     
-    # Export resulting table results to CSV file
-    if ($no_report -eq $false){
-        Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
-        $table | Export-Csv "$sourcePath\$output_filename"
+    # Export resulting table results to CSV file unless no_report flag is raised
+    if ($no_report -eq $true){
+        Write-Host "`nReport not created`n" -ForegroundColor Magenta
     }
     else{
-        Write-Host "`nReport not created`n" -ForegroundColor Magenta
+        Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
+        $table | Export-Csv "$sourcePath\$output_filename"
+        
     }
 }
 
