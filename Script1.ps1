@@ -61,9 +61,13 @@ Function Create-Users($table){
     }
     
     # Export resulting table results to CSV file
-    Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
-    $table | Export-Csv "$sourcePath\$output_filename"
-    
+    if ($no_report -eq $false){
+        Write-Host "`nExporting results as $output_filename at directory $sourcePath `n" -ForegroundColor Magenta
+        $table | Export-Csv "$sourcePath\$output_filename"
+    }
+    else{
+        Write-Host "`nReport not created`n" -ForegroundColor Magenta
+    }
 }
 
 # Function to delete users based on entries in .csv file
