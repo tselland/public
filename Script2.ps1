@@ -18,19 +18,18 @@ Function Set-Stats([string]$label, [string]$info) {
     return $stats
 }
 
-##could be removed
-$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name
+$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -ErrorAction 'silentlycontinue'
 
 #elements of the system are gathered and assigned to variables
-$computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name
-$computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name
-$computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name
-$computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name
-$computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name
-$computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'"
-$computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name 
-$lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime
-$userSession = Get-WmiObject Win32_Session -ComputerName $computer_name
+$computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
+$computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+$lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -ErrorAction 'silentlycontinue'
+$userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
 Clear-Host
 
 #Create table object that will be populated with system information
@@ -178,4 +177,7 @@ if ($no_report -eq $false) {
     #Save the document as a .xlsx in the same folder as the current script
     $newFullName = $fullName.replace('.csv', '.xlsx')
     $wb.SaveAs($newFullName)
+
+    #Delete the CSV file
+    Remove-Item $fullName
 }
