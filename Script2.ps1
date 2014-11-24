@@ -18,18 +18,56 @@ Function Set-Stats([string]$label, [string]$info) {
     return $stats
 }
 
-$computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+#Get Credentials every time
+$cred=""
 
-#elements of the system are gathered and assigned to variables
-$computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
-$computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-$lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -ErrorAction 'silentlycontinue'
-$userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+
+$getCredentials = Read-Host "Do you want to enter credentials? (y or n)"
+if ($getCredentials -eq "y"){
+  $cred = Get-Credential
+}
+
+$computer =""
+$computerSystem =""
+$computerBIOS =""
+$computerOS =""
+$computerCPU =""
+$computerHDD =""
+$computerBattery =""
+$lastBootUpTime =""
+$userSession =""
+
+Write-Host $cred
+
+if ($cred){
+   
+    $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    #elements of the system are gathered and assigned to variables
+    $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -Credential $cred  -ErrorAction 'silentlycontinue'
+    $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -Credential $cred  -ErrorAction 'silentlycontinue'
+    $lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -Credential $cred -ErrorAction 'silentlycontinue'
+    $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+   
+} else {
+    $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+
+    #elements of the system are gathered and assigned to variables
+    $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
+    $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -ErrorAction 'silentlycontinue'
+    $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+}
+
 Clear-Host
 
 #Create table object that will be populated with system information
