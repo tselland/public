@@ -7,7 +7,7 @@
 ## Parameters 
 # $computer_name parameter will accept a fully qualified domain name (FQDN), a NetBIOS name, or an IP address.
 # if no computer name is passed, $computer_name will default to localhost
-param([string]$computer_name="localhost", [switch]$no_report)
+param([string]$computer_name="localhost", [switch]$no_report=$true)
 
 #Function to append stats and info to the stats for each WMI Object
 Function Set-Stats([string]$label, [string]$info) {
@@ -39,18 +39,20 @@ $userSession =""
 
 Write-Host $cred
 
-if ($cred){
+if ($cred -ne ""){
    
     $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     #elements of the system are gathered and assigned to variables
     $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
-    $computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerBIOS = Get-WmiObject Win32_BIOS -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -Credential $cred  -ErrorAction 'silentlycontinue'
     $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -Credential $cred  -ErrorAction 'silentlycontinue'
-    $lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -Credential $cred -ErrorAction 'silentlycontinue'
+    #$wmi = gwmi win32_operatingsystem
+    #$lastBootUpTime = $wmi.ConvertToDateTime($wmi.LastBootUpTime)
+    $lastBootUpTime = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
    
 } else {
@@ -58,17 +60,17 @@ if ($cred){
 
     #elements of the system are gathered and assigned to variables
     $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-    $computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerBIOS = Get-WmiObject Win32_BIOS -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
     $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-    $lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_operatingsystem | select lastbootuptime -ErrorAction 'silentlycontinue'
+    $lastBootUpTime = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
 }
 
-Clear-Host
+#Clear-Host
 
 #Create table object that will be populated with system information
 $table = @()
