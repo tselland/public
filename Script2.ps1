@@ -34,8 +34,9 @@ $computerOS =""
 $computerCPU =""
 $computerHDD =""
 $computerBattery =""
-$lastBootUpTime =""
 $userSession =""
+$networkConfig =""
+$computerProcess =""
 
 Write-Host $cred
 
@@ -48,26 +49,25 @@ if ($cred -ne ""){
     $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
-    $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -Credential $cred  -ErrorAction 'silentlycontinue'
+    $computerHDD = Get-WmiObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -Credential $cred  -ErrorAction 'silentlycontinue'
     $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -Credential $cred  -ErrorAction 'silentlycontinue'
-    #$wmi = gwmi win32_operatingsystem
-    #$lastBootUpTime = $wmi.ConvertToDateTime($wmi.LastBootUpTime)
-    $lastBootUpTime = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $networkConfig = Get-WmiObject win32_NetworkAdapterConfiguration -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $computerProcess = Get-WmiObject win32_Process -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
    
 } else {
     $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-
     #elements of the system are gathered and assigned to variables
     $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerBIOS = Get-WmiObject Win32_BIOS -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerCPU = Get-WmiObject Win32_Processor -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerDrives = Get-WmiObject Win32_CDROMDrive -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-    $computerHDD = Get-WMIObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
+    $computerHDD = Get-WmiObject Win32_LogicalDisk -ComputerName $computer_name -Filter "DeviceID = 'C:'" -ErrorAction 'silentlycontinue'
     $computerBattery = Get-WmiObject Win32_Battery -ComputerName $computer_name -ErrorAction 'silentlycontinue'
-    $lastBootUpTime = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $networkConfig = Get-WmiObject win32_NetworkAdapterConfiguration -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $computerProcess = Get-WmiObject win32_Process -ComputerName $computer_name -ErrorAction 'silentlycontinue'
 }
 
 #Clear-Host
@@ -107,11 +107,20 @@ $table += Set-Stats "Optical Drive" $drive
 #OPERATING SYSTEM
 $table += Set-Stats "Operating System" $computerOS.caption
 $table += Set-Stats "Service Pack" $computerOS.ServicePackMajorVersion
+$table += Set-Stats "OS Install Date" $computerOS.InstallDate
 
 #USER INFORMATION
 $table += Set-Stats "Current User" $computerSystem.UserName
+$table += Set-Stats "Number of Users" $computerOS.NumberOfUsers
+$table += Set-Stats "Owner" $computerSystem.PrimaryOwnerName
 $table += Set-Stats "Session Start" $startTime
-$table += Set-Stats "Last Reboot" $lastBootUpTime.lastbootuptime
+$table += Set-Stats "Last Reboot" $computerOS.lastbootuptime
+$table += Set-Stats "Time Zone" $computerOS.CurrentTimeZone
+
+#PROCESS INFORMATION
+$table += Set-Stats "Session ID" $computerProcess.SessionId
+$table += Set-Stats "Write Operation Count" $computerProcess.WriteOperationCount
+$table += Set-Stats "Read Operation Count" $computerProcess.ReadOperationCount
 
 #BATTERY (if it exists)
 if($computerBattery) {
@@ -132,6 +141,12 @@ if($computerBattery) {
 } else {
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
+
+#NETWORK INFORMATION
+$table += Set-Stats "MAC Address" $networkConfig.MACAddress
+$table += Set-Stats "IP Address" $networkConfig.IPAddress
+$table += Set-Stats "Workgroup" $computerSystem.Workgroup
+$table += Set-Stats "Owner" $computerSystem.Status
 
 #Output results table to console
 $table
