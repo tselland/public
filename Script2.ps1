@@ -4,10 +4,12 @@
 ## Carlos Filoteo, Nathan Dudley, Michael Helvey, Travis Selland
 ## Script 2 - Gather information about Windows computers in your enterprise
 
-# Parameters 
+## Parameters 
 # $computer_name parameter will accept a fully qualified domain name (FQDN), a NetBIOS name, or an IP address.
+# if no computer name is passed, $computer_name will default to localhost
 param([string]$computer_name="localhost", [switch]$no_report)
 
+#Function to append stats and info to the stats for each WMI Object
 Function Set-Stats([string]$label, [string]$info) {
     $stats = "" | Select Label, Info
     $stats.label = $label
@@ -16,8 +18,10 @@ Function Set-Stats([string]$label, [string]$info) {
     return $stats
 }
 
+##could be removed
 $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name
 
+#elements of the system are gathered and assigned to variables
 $computerSystem = Get-WmiObject Win32_ComputerSystem -ComputerName $computer_name
 $computerBIOS = Get-CimInstance CIM_BIOSElement -ComputerName $computer_name
 $computerOS = Get-WmiObject Win32_OperatingSystem -ComputerName $computer_name
@@ -29,19 +33,23 @@ $lastBootUpTime = Get-CimInstance -ComputerName $computer_name -ClassName win32_
 $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name
 Clear-Host
 
+#Create table object that will be populated with system information.
 $table = @()
 
+#Gather basic information pertaining to Hard Drive, RAM, and Session time.
 $hddCap = "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
 $hddSpace = "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
 $ram = "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
 $startTime = [System.Management.ManagementDateTimeConverter]::ToDateTime($userSession[0].StartTime)
 
+#if there are drives associated with this machine, they will be listed here.
 if($computerDrives){
     $drive = $computerDrives.Description
 } else {
     $drive = "None"
 }
 
+#Output System information Header
 Write-Host "System Information for: " $computerSystem.Name -BackgroundColor DarkCyan
 
 #SPECIFICATIONS
@@ -57,16 +65,16 @@ $table += Set-Stats "HDD Space" $hddSpace
 $table += Set-Stats "RAM" $ram
 $table += Set-Stats "Optical Drive" $drive
 
-#Operating System
+#OPERATING SYSTEM
 $table += Set-Stats "Operating System" $computerOS.caption
 $table += Set-Stats "Service Pack" $computerOS.ServicePackMajorVersion
 
-#User Info
+#USER INFORMATION
 $table += Set-Stats "Current User" $computerSystem.UserName
 $table += Set-Stats "Session Start" $startTime
 $table += Set-Stats "Last Reboot" $lastBootUpTime.lastbootuptime
 
-#Battery
+#BATTERY (if it exists)
 if($computerBattery) {
     $percentRemaining = $computerBattery.EstimatedChargeRemaining
     $hoursRemaining = [Math]::Floor([decimal]($computerBattery.EstimatedRunTime / 60))
@@ -86,7 +94,7 @@ if($computerBattery) {
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
 
-#Output table to console
+#Output results table to console
 $table
 
 #Export Report to CSV and format for excel
@@ -112,6 +120,7 @@ if ($no_report -eq $true) {
     $headingCaptions = @("Computer Specs", "Hardware", "Operating System", "User and Session", "Battery Life")
     $counter = 0
 
+    #for each heading row, change color and formatting
     foreach($hr in $headingRows){
         $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
         $ws.Range("a$hr").EntireRow.Insert(-4142) | Out-Null
@@ -163,6 +172,7 @@ if ($no_report -eq $true) {
     $chart.ChartTitle.Text = "Hard Disk Allocation"
     $chart.ApplyLayout(6,69)
 
+    #Save the document as an .xlsx with the Full Name of the computer
     $newFullName = $fullName.replace('.csv', '.xlsx')
     $wb.SaveAs($newFullName)
 }
