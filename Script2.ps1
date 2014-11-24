@@ -98,7 +98,7 @@ if($computerBattery) {
 $table
 
 #Export Report to CSV and format for excel
-if ($no_report -eq $true) {
+if ($no_report -eq $false) {
     #Export report as CSV
     $fullName = "$PSScriptRoot\$($computerSystem.Name).csv"
     $table | Export-CSV -path $fullName -ErrorAction 'silentlycontinue'
