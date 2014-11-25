@@ -7,7 +7,7 @@
 ## Parameters 
 # $computer_name parameter will accept a fully qualified domain name (FQDN), a NetBIOS name, or an IP address.
 # if no computer name is passed, $computer_name will default to localhost
-param([string]$computer_name="localhost", [switch]$no_report=$true)
+param([string]$computer_name="localhost", [switch]$no_report=$false)
 
 #Function to append stats and info to the stats for each WMI Object
 Function Set-Stats([string]$label, [string]$info) {
@@ -22,10 +22,13 @@ Function Set-Stats([string]$label, [string]$info) {
 $cred=""
 
 
-$getCredentials = Read-Host "Do you want to enter credentials? (y or n)"
+$getCredentials = Read-Host "Do you want to enter credentials for a remote host? (y or n)"
 if ($getCredentials -eq "y"){
   $cred = Get-Credential
 }
+
+Write-Host "Gathering data..."
+Write-Host ""
 
 $computer =""
 $computerSystem =""
@@ -54,6 +57,7 @@ if ($cred -ne ""){
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $networkConfig = Get-WmiObject win32_NetworkAdapterConfiguration -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
     $computerProcess = Get-WmiObject win32_Process -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
+    $timezone = Get-WMIObject -class Win32_TimeZone -ComputerName $computer_name -Credential $cred -ErrorAction 'silentlycontinue'
    
 } else {
     $computer = Get-WmiObject -Class Win32_Desktop -ComputerName $computer_name -ErrorAction 'silentlycontinue'
@@ -68,9 +72,8 @@ if ($cred -ne ""){
     $userSession = Get-WmiObject Win32_Session -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $networkConfig = Get-WmiObject win32_NetworkAdapterConfiguration -ComputerName $computer_name -ErrorAction 'silentlycontinue'
     $computerProcess = Get-WmiObject win32_Process -ComputerName $computer_name -ErrorAction 'silentlycontinue'
+    $timezone = Get-WMIObject -class Win32_TimeZone -ComputerName $computer_name -ErrorAction 'silentlycontinue'
 }
-
-#Clear-Host
 
 #Create table object that will be populated with system information
 $table = @()
@@ -80,6 +83,8 @@ $hddCap = "{0:N2}" -f ($computerHDD.Size/1GB) + "GB"
 $hddSpace = "{0:P2}" -f ($computerHDD.FreeSpace/$computerHDD.Size) + " Free (" + "{0:N2}" -f ($computerHDD.FreeSpace/1GB) + "GB)"
 $ram = "{0:N2}" -f ($computerSystem.TotalPhysicalMemory/1GB) + "GB"
 $startTime = [System.Management.ManagementDateTimeConverter]::ToDateTime($userSession[0].StartTime)
+$lastReboot = [System.Management.ManagementDateTimeConverter]::ToDateTime($computerOS.lastbootuptime)
+$installDate = [System.Management.ManagementDateTimeConverter]::ToDateTime($computerOS.InstallDate)
 
 #if there are drives associated with this machine, they will be listed here.
 if($computerDrives){
@@ -107,15 +112,15 @@ $table += Set-Stats "Optical Drive" $drive
 #OPERATING SYSTEM
 $table += Set-Stats "Operating System" $computerOS.caption
 $table += Set-Stats "Service Pack" $computerOS.ServicePackMajorVersion
-$table += Set-Stats "OS Install Date" $computerOS.InstallDate
+$table += Set-Stats "OS Install Date" $installDate
 
 #USER INFORMATION
 $table += Set-Stats "Current User" $computerSystem.UserName
 $table += Set-Stats "Number of Users" $computerOS.NumberOfUsers
 $table += Set-Stats "Owner" $computerSystem.PrimaryOwnerName
 $table += Set-Stats "Session Start" $startTime
-$table += Set-Stats "Last Reboot" $computerOS.lastbootuptime
-$table += Set-Stats "Time Zone" $computerOS.CurrentTimeZone
+$table += Set-Stats "Last Reboot" $lastReboot
+$table += Set-Stats "Time Zone" $timezone.StandardName
 
 #PROCESS INFORMATION
 $table += Set-Stats "Session ID" $computerProcess.SessionId
@@ -139,6 +144,7 @@ if($computerBattery) {
     
     $table+= Set-Stats "Battery Remaining" $timeRemaining
 } else {
+    $table += Set-Stats "Battery Status" "No battery connected"
     $table += Set-Stats "Battery Remaining" "No battery connected"
 }
 
@@ -153,6 +159,9 @@ $table
 
 #Export Report to CSV and format for excel
 if ($no_report -eq $false) {
+    Write-Host ""
+    Write-Host "Formatting data in Excel..."
+
     #Export report as CSV
     $fullName = "$PSScriptRoot\$($computerSystem.Name).csv"
     $table | Export-CSV -path $fullName -ErrorAction 'silentlycontinue'
@@ -171,8 +180,8 @@ if ($no_report -eq $false) {
 
     #Add Sub Headings
     #These headings are hard coded based on a fixed format
-    $headingRows = @(1, 6, 14, 18, 23)
-    $headingCaptions = @("Computer Specs", "Hardware", "Operating System", "User and Session", "Battery Life")
+    $headingRows = @(1, 6, 14, 19, 27, 32, 36)
+    $headingCaptions = @("Computer Specs", "Hardware", "Operating System", "User and Session", "Process Information", "Battery Life", "Network Information")
     $counter = 0
 
     #for each heading row, change color and formatting
@@ -207,6 +216,7 @@ if ($no_report -eq $false) {
     $ws.Cells.Item(1,"a").Interior.ColorIndex = 6 #Yellow
     $ws.Range("a1:b1").Merge() | Out-Null
     $ws.Columns.Autofit() | Out-Null
+    $ws.Columns.item("b").ColumnWidth = 41
     $ws.Cells.Item(1,1).HorizontalAlignment = -4108 #Center
 
     #Create another small table with raw data and header for the charts
@@ -214,6 +224,8 @@ if ($no_report -eq $false) {
     $ws.Cells.Item(4, "f") = $computerHDD.FreeSpace/1GB
     $ws.Cells.Item(3, "g") = "Used"
     $ws.Cells.Item(4, "g") = $computerHDD.Size/1GB - $computerHDD.FreeSpace/1GB
+
+
     
     #Create an empty chart
     $chart = $ws.Shapes.AddChart().Chart
